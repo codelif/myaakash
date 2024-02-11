@@ -18,10 +18,10 @@ def login_required(method):
 class MyAakash:
     def __init__(self):
         self.logged_in = False
-        self.tokens = {}
-        self.profile = {}
+        self.tokens: dict[str, str | list[str] | dict[str, str]] = {}
+        self.profile: dict[str, str] = {}
 
-    def login(self, psid: str, password: str):
+    def login(self, psid: str, password: str) -> str:
         ENDPOINT = "/user/session"
 
         payload = {"password": password, "profile": "student", "psid_or_mobile": psid}
@@ -52,7 +52,7 @@ class MyAakash:
         self.get_profile()
         return data["user_id"]
 
-    def cookie_login(self, tokens: dict):
+    def token_login(self, tokens: dict) -> str:
         self.tokens = tokens
         self.logged_in = True
 
@@ -84,7 +84,7 @@ class MyAakash:
         return self.profile
 
     @login_required
-    def generate_cookie(self):
+    def generate_cookie(self) -> str:
         cookies = []
         cookies.append(("aakash_login", self.tokens["aakash_login"]))
         cookies.append(("ace-access-token", self.tokens["access_token"]))
@@ -95,7 +95,7 @@ class MyAakash:
         return cookie_string
 
     @login_required
-    def logout(self):
+    def logout(self) -> bool:
         ENDPOINT = "/logout"
 
         r = requests.post(API + ENDPOINT, headers=self.tokens["headers"]).json()
