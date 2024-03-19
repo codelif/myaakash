@@ -1,4 +1,3 @@
-
 class NotLoggedIn(Exception):
     pass
 
@@ -9,4 +8,3 @@ class LoginError(Exception):
 
 class APIError(Exception):
     pass
-

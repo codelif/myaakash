@@ -1,8 +1,11 @@
+from typing import Literal
 import requests
+import uuid
 
 from myaakash.exceptions import APIError, LoginError, NotLoggedIn
 
-API = "https://session-service.aakash.ac.in/prod/sess/api/v1"
+SESSION_API = "https://session-service.aakash.ac.in/prod/sess/api/v1"
+LMS_API = "https://session-service.aakash.ac.in/prod/lms/api/v1"
 
 
 def login_required(method):
@@ -25,7 +28,7 @@ class MyAakash:
         ENDPOINT = "/user/session"
 
         payload = {"password": password, "profile": "student", "psid_or_mobile": psid}
-        r = requests.post(API + ENDPOINT, json=payload).json()
+        r = requests.post(SESSION_API + ENDPOINT, json=payload).json()
 
         if r["message"] != "OK":
             raise LoginError(r["message"])
@@ -43,10 +46,11 @@ class MyAakash:
             ],
         }
 
-        cookie = self.generate_cookie()
+        cookie = self.__generate_cookie()
         self.tokens["headers"] = {
-            "access-token": self.tokens["access_token"],
+            "access-token": data["access_token"],
             "Cookie": cookie,
+            "x-client-id": str(uuid.uuid4()),
         }
 
         self.get_profile()
@@ -64,7 +68,7 @@ class MyAakash:
     def get_profile(self) -> dict[str, str]:
         ENDPOINT = "/user"
 
-        r = requests.get(API + ENDPOINT, headers=self.tokens["headers"]).json()
+        r = requests.get(SESSION_API + ENDPOINT, headers=self.tokens["headers"]).json()
 
         if r["message"] != "OK":
             raise APIError(r["message"])
@@ -84,7 +88,7 @@ class MyAakash:
         return self.profile
 
     @login_required
-    def generate_cookie(self) -> str:
+    def __generate_cookie(self) -> str:
         cookies = []
         cookies.append(("aakash_login", self.tokens["aakash_login"]))
         cookies.append(("ace-access-token", self.tokens["access_token"]))
@@ -98,7 +102,7 @@ class MyAakash:
     def logout(self) -> bool:
         ENDPOINT = "/logout"
 
-        r = requests.post(API + ENDPOINT, headers=self.tokens["headers"]).json()
+        r = requests.post(SESSION_API + ENDPOINT, headers=self.tokens["headers"]).json()
         if r["message"] != "OK":
             raise APIError(r["message"])
 
@@ -107,3 +111,58 @@ class MyAakash:
         self.logged_in = False
 
         return True
+
+    @login_required
+    def get_tests(self, status: Literal["live", "upcoming", "passed"])->list:
+        ENDPOINT = "/tests"
+
+        tests = []
+        next_page = 1
+        while next_page != -1:
+            params = {
+                "filter": "status",
+                "page_number": next_page,
+                "page_size": 50,
+                "status": status,
+            }
+            r = requests.get(
+                LMS_API + ENDPOINT, params=params, headers=self.tokens["headers"]
+            ).json()
+
+            if r["message"] != "OK":
+                raise APIError(r["message"])
+
+            data = r["data"]
+            tests.extend(data["tests"])
+            next_page = data["pagination"]["next_page"]
+
+        return tests
+
+    @login_required
+    def get_test(self, test_id: str, short_code: str)-> dict:
+        ENDPOINT = "/test"
+
+        params = {
+                "test_id": test_id,
+                "test_short_code": short_code
+        }
+
+        r = requests.get(LMS_API + ENDPOINT, params=params, headers=self.tokens["headers"]).json()
+
+        if r["message"] != "OK":
+            raise APIError(r["message"])
+
+        data = r["data"]
+        return data
+
+    @login_required
+    def get_syllabus(self, syllabus_id: str)->dict:
+        ENDPOINT = "/syllabus/"
+
+        r = requests.get(LMS_API + ENDPOINT + syllabus_id, headers= self.tokens["headers"]).json()
+
+        if r["message"] != "OK":
+            raise APIError(r["message"])
+
+        return r["data"]
+
