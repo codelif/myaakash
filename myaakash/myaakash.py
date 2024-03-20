@@ -6,6 +6,8 @@ from myaakash.exceptions import APIError, LoginError, NotLoggedIn
 
 SESSION_API = "https://session-service.aakash.ac.in/prod/sess/api/v1"
 LMS_API = "https://session-service.aakash.ac.in/prod/lms/api/v1"
+CHL_API_V1 = "https://session-service.aakash.ac.in/prod/chl/api/v1"
+CHL_API_V2 = "https://session-service.aakash.ac.in/prod/chl/api/v2"
 
 
 def login_required(method):
@@ -40,26 +42,23 @@ class MyAakash:
             "access_token": data["access_token"],
             "refresh_token": data["refresh_token"],
             "aakash_login": data["aakash_login_value"],
+            "client_id": str(uuid.uuid4()),
             "web_session": [
                 data["web_session_key"],
                 data["web_session_value"],
             ],
         }
 
-        cookie = self.__generate_cookie()
-        self.tokens["headers"] = {
-            "access-token": data["access_token"],
-            "Cookie": cookie,
-            "x-client-id": str(uuid.uuid4()),
-        }
-
+        self.__generate_headers()
         self.get_profile()
+
         return data["user_id"]
 
     def token_login(self, tokens: dict) -> str:
         self.tokens = tokens
         self.logged_in = True
 
+        self.__generate_headers()
         self.get_profile()
 
         return self.profile["user_id"]
@@ -68,7 +67,7 @@ class MyAakash:
     def get_profile(self) -> dict[str, str]:
         ENDPOINT = "/user"
 
-        r = requests.get(SESSION_API + ENDPOINT, headers=self.tokens["headers"]).json()
+        r = requests.get(SESSION_API + ENDPOINT, headers=self.headers).json()
 
         if r["message"] != "OK":
             raise APIError(r["message"])
@@ -88,7 +87,7 @@ class MyAakash:
         return self.profile
 
     @login_required
-    def __generate_cookie(self) -> str:
+    def __generate_headers(self) -> dict[str, str]:
         cookies = []
         cookies.append(("aakash_login", self.tokens["aakash_login"]))
         cookies.append(("ace-access-token", self.tokens["access_token"]))
@@ -96,13 +95,19 @@ class MyAakash:
 
         cookie_string = "; ".join([f"{name}={value}" for name, value in cookies])
 
-        return cookie_string
+        self.headers = {
+            "access-token": self.tokens["access_token"],
+            "Cookie": cookie_string,
+            "x-client-id": self.tokens["client_id"],
+        }
+
+        return self.headers
 
     @login_required
     def logout(self) -> bool:
         ENDPOINT = "/logout"
 
-        r = requests.post(SESSION_API + ENDPOINT, headers=self.tokens["headers"]).json()
+        r = requests.post(SESSION_API + ENDPOINT, headers=self.headers).json()
         if r["message"] != "OK":
             raise APIError(r["message"])
 
@@ -113,7 +118,7 @@ class MyAakash:
         return True
 
     @login_required
-    def get_tests(self, status: Literal["live", "upcoming", "passed"])->list:
+    def get_tests(self, status: Literal["live", "upcoming", "passed"]) -> list:
         ENDPOINT = "/tests"
 
         tests = []
@@ -126,7 +131,7 @@ class MyAakash:
                 "status": status,
             }
             r = requests.get(
-                LMS_API + ENDPOINT, params=params, headers=self.tokens["headers"]
+                LMS_API + ENDPOINT, params=params, headers=self.headers
             ).json()
 
             if r["message"] != "OK":
@@ -139,15 +144,12 @@ class MyAakash:
         return tests
 
     @login_required
-    def get_test(self, test_id: str, short_code: str)-> dict:
+    def get_test(self, test_id: str, short_code: str) -> dict:
         ENDPOINT = "/test"
 
-        params = {
-                "test_id": test_id,
-                "test_short_code": short_code
-        }
+        params = {"test_id": test_id, "test_short_code": short_code}
 
-        r = requests.get(LMS_API + ENDPOINT, params=params, headers=self.tokens["headers"]).json()
+        r = requests.get(LMS_API + ENDPOINT, params=params, headers=self.headers).json()
 
         if r["message"] != "OK":
             raise APIError(r["message"])
@@ -156,13 +158,68 @@ class MyAakash:
         return data
 
     @login_required
-    def get_syllabus(self, syllabus_id: str)->dict:
+    def get_syllabus(self, syllabus_id: str) -> dict:
         ENDPOINT = "/syllabus/"
 
-        r = requests.get(LMS_API + ENDPOINT + syllabus_id, headers= self.tokens["headers"]).json()
+        r = requests.get(LMS_API + ENDPOINT + syllabus_id, headers=self.headers).json()
 
         if r["message"] != "OK":
             raise APIError(r["message"])
 
         return r["data"]
 
+    @login_required
+    def get_packages(self) -> list:
+        ENDPOINT = "/itutor/package"
+
+        r = requests.get(CHL_API_V1 + ENDPOINT, headers=self.headers).json()
+
+        if r["message"] != "OK":
+            raise APIError(r["message"])
+
+        return r["data"]["packages"]
+
+    @login_required
+    def get_course(self, package_id: str, course_id: str, class_: str = ""):
+        ENDPOINT = f"/itutor/package/{package_id}/subject"
+
+        params = {"class": class_, "course_id": course_id}
+
+        r = requests.get(CHL_API_V1 + ENDPOINT, params, headers=self.headers).json()
+
+        if r["message"] != "OK":
+            raise APIError(r["message"])
+
+        return r["data"]["chapters"]
+
+    @login_required
+    def get_chapter_assets(self, package_id: str, course_id: str, chapter_id: str):
+        ENDPOINT = f"/itutor/package/{package_id}/course/{course_id}/chapter"
+
+        params = {"node_id": chapter_id}
+        r = requests.get(CHL_API_V2 + ENDPOINT, params, headers=self.headers).json()
+
+        if r["message"] != "OK":
+            raise APIError(r["message"])
+
+        return r["data"]["chapter"]
+
+    @login_required
+    def get_asset(
+        self,
+        package_id: str,
+        course_id: str,
+        chapter_id: str,
+        asset_id: str,
+        asset_type,
+    ) -> dict[str, str]:
+        ENDPOINT = f"/itutor/package/{package_id}/course/{course_id}/chapter/{chapter_id}/asset/{asset_id}"
+
+        params = {"asset_type": asset_type}
+
+        r = requests.get(CHL_API_V2 + ENDPOINT, params, headers=self.headers).json()
+
+        if r["message"] != "OK":
+            raise APIError(r["message"])
+
+        return r["data"]
