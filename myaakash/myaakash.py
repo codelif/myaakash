@@ -23,7 +23,7 @@ def login_required(method):
 class MyAakash:
     def __init__(self):
         self.logged_in = False
-        self.tokens: dict[str, str | list[str] | dict[str, str]] = {}
+        self.tokens: dict[str, str | list[str]] = {}
         self.profile: dict[str, str] = {}
 
     def login(self, psid: str, password: str) -> str:
