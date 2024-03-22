@@ -1,6 +1,7 @@
 from typing import Literal
 import requests
 import uuid
+import time
 
 from myaakash.exceptions import APIError, LoginError, NotLoggedIn
 
@@ -47,6 +48,7 @@ class MyAakash:
                 data["web_session_key"],
                 data["web_session_value"],
             ],
+            "login_timestamp": str(time.time()),
         }
 
         self.__generate_headers()
