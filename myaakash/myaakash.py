@@ -252,7 +252,7 @@ class MyAakash:
 
         params = {"asset_type": asset_type}
 
-        r = requests.get(CHL_API_V2 + ENDPOINT, params, headers=self.headers).json()
+        r = requests.get(CHL_API_V1 + ENDPOINT, params, headers=self.headers).json()
 
         if r["message"] != "OK":
             raise APIError(r["message"])
