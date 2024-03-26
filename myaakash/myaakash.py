@@ -61,9 +61,51 @@ class MyAakash:
         self.logged_in = True
 
         self.__generate_headers()
-        self.get_profile()
+
+        while True:
+            try:
+                self.get_profile()
+                break
+            except APIError as e:
+                if e.__str__() == "Invalid Session ID":
+                    self.refresh_login()
+
+                raise e
 
         return self.profile["user_id"]
+
+    def refresh_login(self):
+        ENDPOINT = "/user/session"
+
+        payload = {"refresh_token": self.tokens["refresh_token"]}
+        r = requests.put(
+            SESSION_API + ENDPOINT, headers=self.headers, data=payload
+        ).json()
+
+        print(r)
+
+        if r["message"] != "OK":
+            raise LoginError(r["message"])
+
+        self.logged_in = True
+        data = r["data"]
+
+        self.tokens = {
+            "access_token": data["access_token"],
+            "refresh_token": data["refresh_token"],
+            "aakash_login": data["aakash_login_value"],
+            "client_id": str(uuid.uuid4()),
+            "web_session": [
+                data["web_session_key"],
+                data["web_session_value"],
+            ],
+            "login_timestamp": str(time.time()),
+        }
+
+        self.__generate_headers()
+        self.get_profile()
+
+        return data["user_id"]
 
     @login_required
     def get_profile(self) -> dict[str, str]:
