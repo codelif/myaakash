@@ -90,17 +90,8 @@ class MyAakash:
         self.logged_in = True
         data = r["data"]
 
-        self.tokens = {
-            "access_token": data["access_token"],
-            "refresh_token": data["refresh_token"],
-            "aakash_login": data["aakash_login_value"],
-            "client_id": str(uuid.uuid4()),
-            "web_session": [
-                data["web_session_key"],
-                data["web_session_value"],
-            ],
-            "login_timestamp": str(time.time()),
-        }
+        self.tokens["access_token"] = data["access_token"]
+        self.tokens["refresh_token"] = data["refresh_token"]
 
         self.__generate_headers()
         self.get_profile()
