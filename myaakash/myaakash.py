@@ -67,10 +67,7 @@ class MyAakash:
                 self.get_profile()
                 break
             except APIError as e:
-                if e.__str__() == "Invalid Session ID":
-                    self.refresh_login()
-
-                raise e
+                self.refresh_login()
 
         return self.profile["user_id"]
 
@@ -79,10 +76,8 @@ class MyAakash:
 
         payload = {"refresh_token": self.tokens["refresh_token"]}
         r = requests.put(
-            SESSION_API + ENDPOINT, headers=self.headers, data=payload
+            SESSION_API + ENDPOINT, headers=self.headers, json=payload
         ).json()
-
-        print(r)
 
         if r["message"] != "OK":
             raise LoginError(r["message"])
