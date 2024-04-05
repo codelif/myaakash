@@ -1,1 +1,1 @@
-from myaakash.myaakash import MyAakash
+from myaakash.session_service import SessionService

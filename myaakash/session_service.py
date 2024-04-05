@@ -22,7 +22,7 @@ def login_required(method):
     return wrapper
 
 
-class MyAakash:
+class SessionService:
     def __init__(self):
         self.logged_in = False
         self.tokens: dict[str, str | list[str]] = {}
