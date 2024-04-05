@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "myaakash"
-version = "0.2.0"
+version = "1.0.0"
 description = "MyAakash API Bindings for Python"
 authors = ["Harsh Sharma <goharsh007@gmail.com>"]
 license = "MIT License"
