@@ -4,22 +4,13 @@ from typing import Literal
 
 import requests
 
-from myaakash.exceptions import APIError, LoginError, NotLoggedIn
+from myaakash.exceptions import APIError, LoginError
+from myaakash.utils import login_required
 
 SESSION_API = "https://session-service.aakash.ac.in/prod/sess/api/v1"
 LMS_API = "https://session-service.aakash.ac.in/prod/lms/api/v1"
 CHL_API_V1 = "https://session-service.aakash.ac.in/prod/chl/api/v1"
 CHL_API_V2 = "https://session-service.aakash.ac.in/prod/chl/api/v2"
-
-
-def login_required(method):
-    def wrapper(*args, **kwargs):
-        if not args[0].logged_in:
-            raise NotLoggedIn
-
-        return method(*args, **kwargs)
-
-    return wrapper
 
 
 class SessionService:
