@@ -1,7 +1,8 @@
-from typing import Literal
-import requests
-import uuid
 import time
+import uuid
+from typing import Literal
+
+import requests
 
 from myaakash.exceptions import APIError, LoginError, NotLoggedIn
 
@@ -192,6 +193,29 @@ class MyAakash:
         ENDPOINT = "/syllabus/"
 
         r = requests.get(LMS_API + ENDPOINT + syllabus_id, headers=self.headers).json()
+
+        if r["message"] != "OK":
+            raise APIError(r["message"])
+
+        return r["data"]
+
+    @login_required
+    def get_url(
+        self,
+        test_id: str,
+        test_number: str,
+        test_short_code: str,
+        event_type: Literal["result"],
+    ):
+        ENDPOINT = "/exam/url"
+        params = {
+            "test_id": test_id,
+            "test_number": test_number,
+            "test_short_code": test_short_code,
+            "event_type": event_type,
+        }
+
+        r = requests.get(LMS_API + ENDPOINT, params=params, headers=self.headers).json()
 
         if r["message"] != "OK":
             raise APIError(r["message"])
