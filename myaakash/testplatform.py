@@ -82,7 +82,7 @@ class TestPlatform:
         if r["message"] != "OK":
             raise APIError(r["message"])
 
-        return r["data"]["answer-key"]
+        return r["data"]["answer_key"]
 
     @login_required
     def get_analysis_comparative(self):
