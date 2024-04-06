@@ -65,7 +65,7 @@ class TestPlatform:
 
     @login_required
     def attempt(self, consumed_time: bool):
-        ENDPOINT = "/exam"
+        ENDPOINT = "/exam/attempt"
         params = {"consumed_time": "true" if consumed_time else "false"}
 
         r = self.client.get(EXAM_PLATFORM_API + ENDPOINT, params=params).json()
