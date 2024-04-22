@@ -1,6 +1,10 @@
 [tool.poetry]
 name = "myaakash"
-version = "1.2.0"
+<<<<<<< HEAD
+version = "1.2.1"
+=======
+version = "1.1.0"
+>>>>>>> parent of dee7a1a (chore: bump version to v1.2.0)
 description = "MyAakash API Bindings for Python"
 authors = ["Harsh Sharma <goharsh007@gmail.com>"]
 license = "MIT License"

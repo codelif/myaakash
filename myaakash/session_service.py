@@ -145,11 +145,11 @@ class SessionService:
 
         tests = []
         next_page = 1
-        while next_page != -1:
+        while next_page not in [-1, 0]:
             params = {
                 "filter": "status",
                 "page_number": next_page,
-                "page_size": 50,
+                "page_size": 100,
                 "status": status,
             }
             r = requests.get(
