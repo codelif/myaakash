@@ -12,11 +12,14 @@ EXAM_PLATFORM_API = "https://examplatform-api.aakash.ac.in/prod/exam-platform/ap
 class TestPlatform:
     def __init__(self, access_url: str):
         self.access_url = access_url
+        
         self.logged_in = False
-        self._init_client()
-        self._login()
         self.headers = {}
         self.profile = {}
+        
+        self._init_client()
+        self._login()
+        
 
     def _init_client(self):
 
